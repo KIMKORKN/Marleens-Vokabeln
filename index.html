@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vokabeln">
+<meta name="theme-color" content="#1f7a8c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Latein-Vokabeln</title>
+<style>
+:root{
+  --bg:#f4f1ea; --card:#fff; --ink:#1d2433; --muted:#667085; --line:#e4dfd3;
+  --teal:#1f7a8c; --teal-d:#155866; --teal-l:#e2f1f4;
+  --gold:#c99a2e; --gold-l:#fbf1d6; --green:#2f8f4e; --green-l:#e3f4e8;
+  --red:#c2413b; --red-l:#fbe6e4; --amber:#b86e00; --amber-l:#fff1d9; --violet:#6b4bb8; --violet-l:#eee8fb;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14171d; --card:#1e232c; --ink:#eef0f4; --muted:#9aa3b2; --line:#2c333f;
+    --teal:#4fb3c4; --teal-d:#7fd0dd; --teal-l:#173840; --gold:#e2b54a; --gold-l:#3a301a; --green:#5fc47d; --green-l:#17331f;
+    --red:#ef7a72; --red-l:#3a1d1b; --amber:#f0a640; --amber-l:#3a2a12; --violet:#a98ff0; --violet-l:#2a2342; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:720px;margin:0 auto;padding:14px 16px 90px}
+h1{font-size:26px;margin:4px 0 2px} h2{font-size:20px;margin:18px 0 8px} h3{font-size:17px;margin:12px 0 6px}
+p{margin:6px 0}
+.muted{color:var(--muted)} .small{font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin:10px 0}
+.row{display:flex;gap:10px;align-items:center} .row.wrap{flex-wrap:wrap} .grow{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,.btn{font:inherit;border:none;border-radius:12px;padding:12px 16px;background:var(--teal-l);color:var(--teal-d);font-weight:600;cursor:pointer;min-height:46px}
+button.primary{background:var(--teal);color:#fff} button.gold{background:var(--gold);color:#fff}
+button.danger{background:var(--red-l);color:var(--red)} button.ghost{background:transparent;color:var(--teal)}
+button.block{width:100%} button:active{transform:scale(.98)}
+button.small{min-height:34px;padding:6px 10px;font-size:14px;border-radius:9px}
+input[type=text],input[type=password],input[type=number],textarea,select{font:inherit;width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+.big-input{font-size:20px;padding:14px 16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:var(--teal-l);color:var(--teal-d);font-size:14px;font-weight:600}
+.pill.gold{background:var(--gold-l);color:var(--gold)} .pill.red{background:var(--red-l);color:var(--red)} .pill.violet{background:var(--violet-l);color:var(--violet)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden} .bar>div{height:100%;background:var(--teal);border-radius:6px;transition:width .4s}
+.bar.gold>div{background:var(--gold)}
+.latin{font-family:"Iowan Old Style","Palatino",Georgia,serif;font-size:36px;font-weight:600;text-align:center;margin:10px 0 0}
+.forms{text-align:center;color:var(--muted);font-family:"Iowan Old Style","Palatino",Georgia,serif;font-size:18px;margin-bottom:14px}
+.chip{display:inline-block;padding:6px 11px;margin:3px 4px 3px 0;border-radius:10px;border:1.5px solid var(--line);font-size:16px;background:var(--card)}
+.chip.main{font-weight:700} .chip.hit{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.chip.typo{background:var(--amber-l);border-color:var(--amber);color:var(--amber)} .chip.miss{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.chip.side-miss{border-style:dashed;color:var(--muted)}
+.chip.edit{cursor:pointer;user-select:none}
+.bonus{border:2px solid var(--gold);background:var(--gold-l);border-radius:var(--r);padding:12px 14px;margin:12px 0}
+.feedback{border-radius:var(--r);padding:12px 14px;margin:12px 0}
+.feedback.ok{background:var(--green-l)} .feedback.bad{background:var(--red-l)} .feedback.mid{background:var(--amber-l)}
+.lesson{display:flex;align-items:center;gap:12px}
+.lesson .num{width:46px;height:46px;border-radius:12px;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex:none}
+.review-row{border-bottom:1px solid var(--line);padding:10px 0}
+.review-row input{padding:8px 10px;font-size:16px;border-radius:9px}
+.review-row .lat{font-family:Georgia,serif;font-weight:600}
+.err{color:var(--red);font-size:14px;margin-top:4px;min-height:1em}
+.hidden{display:none!important}
+.center{text-align:center}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:24px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;z-index:50;max-width:90%;text-align:center}
+.pop{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:40}
+.confetti i{position:absolute;top:-10px;width:9px;height:14px;border-radius:2px;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+table{width:100%;border-collapse:collapse;font-size:15px} td,th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tabbar{display:flex;gap:6px;margin:8px 0}
+.tabbar button{flex:1;min-height:38px;padding:6px;font-size:14px}
+.tabbar button.on{background:var(--teal);color:#fff}
+.photo-preview{max-width:100%;max-height:260px;border-radius:10px;display:block;margin:8px auto}
+@media print{
+  body{background:#fff;color:#000} main{padding:0}
+  .noprint,.top,.toast{display:none!important}
+  .card{border:none;padding:0}
+  .print-only{display:block!important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<div id="toast" class="toast hidden"></div>
+
+<script src="parser.js"></script>
+<script>
+'use strict';
+/* =========================================================
+   Latein-Vokabeltrainer – Daten bleiben auf diesem Gerät
+   ========================================================= */
+const STORE_KEY = 'latein-vokabeln-v1';
+const DAY = 86400000;
+const INTERVALS = [0, 0, 1, 3, 7, 14];          // Tage je Karteifach 0..5
+const LEVELS = [
+  [0, 'Tīrō', 'Anfängerin'], [250, 'Discipula', 'Schülerin'], [700, 'Legionāria', 'Legionärin'],
+  [1500, 'Centuriō', 'Hauptfrau'], [3000, 'Tribūna', 'Tribunin'], [6000, 'Cōnsul', 'Konsulin'], [12000, 'Imperātrīx', 'Kaiserin']
+];
+const PRAISE = ['Optimē!', 'Bene!', 'Euge!', 'Recte!', 'Ita est!'];
+
+let S = load();
+let view = { name: 'home' };
+let session = null;
+let adminOK = false;
+
+function blank() {
+  return { lessons: [], words: [], stats: { points: 0, days: {}, best: 0 }, settings: { pin: '', goal: 20 } };
+}
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); if (s && s.words) return Object.assign(blank(), s); } catch (e) {}
+  return blank();
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+  catch (e) { toast('Speichern fehlgeschlagen. Ist der Speicher voll?'); }
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = s => document.querySelector(s);
+const lessonOf = id => S.lessons.find(l => l.id === id);
+const wordsOf = id => S.words.filter(w => w.lessonId === id);
+const isDue = w => (w.due || 0) <= Date.now();
+const hasSide = w => w.meanings.some(m => !m.main);
+
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.add('hidden'), ms);
+}
+function confetti() {
+  const box = document.createElement('div'); box.className = 'confetti';
+  const cols = ['#c99a2e', '#1f7a8c', '#2f8f4e', '#6b4bb8', '#c2413b'];
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('i');
+    p.style.left = Math.random() * 100 + 'vw'; p.style.background = cols[i % cols.length];
+    p.style.animationDelay = Math.random() * .4 + 's'; box.appendChild(p);
+  }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 2300);
+}
+
+// ---------- Statistik ----------
+function level(points) {
+  let L = LEVELS[0], next = null;
+  for (let i = 0; i < LEVELS.length; i++) { if (points >= LEVELS[i][0]) { L = LEVELS[i]; next = LEVELS[i + 1] || null; } }
+  return { idx: LEVELS.indexOf(L) + 1, name: L[1], de: L[2], from: L[0], to: next ? next[0] : null };
+}
+function streak() {
+  let n = 0; const d = new Date();
+  if (!S.stats.days[today()]) d.setDate(d.getDate() - 1);   // heute noch nicht gelernt: Serie zählt ab gestern
+  for (;;) {
+    const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    if (S.stats.days[k] && S.stats.days[k].cards > 0) { n++; d.setDate(d.getDate() - 1); } else break;
+  }
+  return n;
+}
+function dayStat() { return S.stats.days[today()] || { cards: 0, points: 0 }; }
+function addDay(points) {
+  const k = today(); const d = S.stats.days[k] || { cards: 0, points: 0 };
+  d.cards++; d.points += points; S.stats.days[k] = d;
+  S.stats.points += points;
+}
+
+// ---------- Navigation ----------
+function go(name, data) { view = Object.assign({ name }, data || {}); render(); window.scrollTo(0, 0); }
+function render() {
+  const app = $('#app');
+  const f = VIEWS[view.name] || VIEWS.home;
+  app.innerHTML = f();
+  if (view.after) { const a = view.after; view.after = null; a(); }
+  const af = app.querySelector('[autofocus]'); if (af) setTimeout(() => af.focus(), 50);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const fn = ACT[b.dataset.act]; if (fn) fn(b.dataset.arg, b, e);
+});
+
+function header(title, back) {
+  return `<div class="top noprint">${back ? `<button class="ghost small" data-act="go" data-arg="${back}">‹ Zurück</button>` : '<span></span>'}
+    <span class="pill">🔥 ${streak()} ${streak() === 1 ? 'Tag' : 'Tage'}</span>
+    <span class="pill gold">★ ${S.stats.points}</span></div>${title ? `<h1>${title}</h1>` : ''}`;
+}
+
+// =========================================================
+//  Ansichten
+// =========================================================
+const VIEWS = {};
+
+VIEWS.home = () => {
+  const L = level(S.stats.points), ds = dayStat(), goal = S.settings.goal || 20;
+  const due = S.words.filter(isDue).length;
+  const lessons = S.lessons.slice().sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0) || a.name.localeCompare(b.name));
+  const lvPct = L.to ? Math.round((S.stats.points - L.from) / (L.to - L.from) * 100) : 100;
+  return header('') + `
+  <div class="card">
+    <div class="row"><div class="grow"><div class="small muted">Level ${L.idx}</div><h2 style="margin:0">${L.name} <span class="muted small">(${L.de})</span></h2></div>
+    <div class="pill violet">${L.to ? (L.to - S.stats.points) + ' bis Level ' + (L.idx + 1) : 'Höchstes Level'}</div></div>
+    <div class="bar" style="margin-top:8px"><div style="width:${lvPct}%"></div></div>
+    <div class="row" style="margin-top:12px"><div class="grow small">Tagesziel: ${Math.min(ds.cards, goal)} von ${goal} Karten</div>${ds.cards >= goal ? '<span class="pill gold">Geschafft ✓</span>' : ''}</div>
+    <div class="bar gold"><div style="width:${Math.min(100, ds.cards / goal * 100)}%"></div></div>
+  </div>
+  <button class="primary block" data-act="startDue" ${S.words.length ? '' : 'disabled'}>▶ Lernen${due ? ` – ${due} fällig` : ''}</button>
+  <h2>Lektionen</h2>
+  ${lessons.length ? '' : `<div class="card"><p><b>Noch keine Vokabeln.</b></p><p class="muted">Fotografiere eine Wortschatz-Seite aus dem Cursus. Die App erkennt die Vokabeln, und du prüfst sie einmal kurz.</p></div>`}
+  ${lessons.map(l => {
+    const ws = wordsOf(l.id), gold = ws.filter(w => w.gold).length, d = ws.filter(isDue).length;
+    return `<div class="card lesson" data-act="lesson" data-arg="${l.id}">
+      <div class="num">${esc(l.name).slice(0, 4)}</div>
+      <div class="grow"><b>Lektion ${esc(l.name)}</b><div class="small muted">${ws.length} Vokabeln · ${gold} Gold${d ? ' · ' + d + ' fällig' : ''}</div>
+      <div class="bar gold" style="height:6px;margin-top:6px"><div style="width:${ws.length ? gold / ws.length * 100 : 0}%"></div></div></div>
+      <span class="muted">›</span></div>`;
+  }).join('')}
+  <div class="grid2" style="margin-top:14px">
+    <button data-act="go" data-arg="import">📷 Seite fotografieren</button>
+    <button data-act="admin">🔒 Elternbereich</button>
+  </div>`;
+};
+
+VIEWS.lesson = () => {
+  const l = lessonOf(view.id); if (!l) return VIEWS.home();
+  const ws = wordsOf(l.id);
+  return header('Lektion ' + esc(l.name), 'home') + `
+  <p class="muted">${ws.length} Vokabeln · ${ws.filter(w => w.gold).length} Gold · ${ws.filter(isDue).length} fällig</p>
+  <div class="grid2"><button class="primary" data-act="startLesson" data-arg="${l.id}">▶ Alle abfragen</button>
+  <button data-act="startLessonDue" data-arg="${l.id}">Nur fällige</button></div>
+  <div class="card">${ws.map(w => `<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+    <span style="font-family:Georgia,serif;font-weight:600">${esc(w.latin)}</span> ${w.gold ? '<span class="pill gold">Gold</span>' : ''}
+    <span class="small muted">· Fach ${w.box || 0}</span></div>`).join('')}</div>
+  <p class="small muted">Tipp: Erst wenn du auch die normal gedruckten Zusatzbedeutungen weißt, wird eine Vokabel zur Gold-Karte.</p>`;
+};
+
+// ---------- Foto-Import ----------
+VIEWS.import = () => header('Seite fotografieren', 'home') + `
+  <div class="card">
+    <p>Fotografiere eine Wortschatz-Seite <b>gerade von oben</b>, mit gutem Licht und möglichst ohne Schatten.</p>
+    <label class="small muted">Lektion</label>
+    <input type="text" id="lessonName" inputmode="numeric" placeholder="16" value="${esc(view.lesson || '')}">
+    <div style="height:10px"></div>
+    <label class="btn primary block center" style="display:flex;align-items:center;justify-content:center">📷 Foto aufnehmen oder wählen
+      <input type="file" id="photo" accept="image/*" class="hidden"></label>
+    <div class="err" id="impErr"></div>
+    <div id="progress" class="hidden"><p id="progText">Bereite Bild vor …</p><div class="bar"><div id="progBar" style="width:5%"></div></div>
+    <p class="small muted">Beim ersten Mal lädt die App die deutsche Texterkennung (einige MB). Danach geht es schneller.</p></div>
+    <img id="prev" class="photo-preview hidden" alt="">
+  </div>
+  <div class="card"><b>Ohne Foto?</b><p class="small muted">Du kannst Vokabeln auch von Hand eintragen.</p>
+  <button data-act="manual">✍️ Von Hand eintragen</button></div>`;
+
+VIEWS.review = () => {
+  const r = view.rows;
+  return header('Vokabeln prüfen', view.editId ? 'admin' : 'import') + `
+  <p class="small muted">Lektion <b>${esc(view.lesson)}</b>. Prüfe jede Zeile. Tippe auf eine Bedeutung, um zwischen <b>fett (Hauptbedeutung)</b> und normal (Zusatzbedeutung) zu wechseln. Bedeutungen trennst du mit Semikolon.</p>
+  ${view.warnings && view.warnings.length ? `<div class="feedback mid small">${view.warnings.map(esc).join('<br>')}</div>` : ''}
+  <div class="card" id="rows">${r.map((e, i) => reviewRow(e, i)).join('')}
+    <button class="small" data-act="addRow" data-arg="${r.length}">+ Zeile am Ende</button></div>
+  <button class="primary block" data-act="saveReview">✓ ${r.length} Vokabeln speichern</button>
+  <div class="err" id="revErr"></div>`;
+};
+function reviewRow(e, i) {
+  return `<div class="review-row" data-i="${i}">
+    <div class="row"><input class="lat grow" type="text" value="${esc(e.latin)}" data-f="latin" data-i="${i}" placeholder="Latein">
+    <button class="small danger" data-act="delRow" data-arg="${i}" aria-label="Zeile löschen">✕</button></div>
+    <input type="text" value="${esc(e.forms)}" data-f="forms" data-i="${i}" placeholder="Formen (z. B. amīcī m)" style="margin-top:6px">
+    <input type="text" value="${esc(e.meanings.map(m => m.text).join('; '))}" data-f="meanings" data-i="${i}" placeholder="Bedeutungen, getrennt mit ;" style="margin-top:6px">
+    <div class="chips" style="margin-top:4px">${e.meanings.map((m, k) => `<span class="chip edit ${m.main ? 'main' : ''}" data-act="toggleMain" data-arg="${i}:${k}">${m.main ? '★ ' : ''}${esc(m.text)}</span>`).join('')}</div>
+    <button class="small ghost" data-act="addRow" data-arg="${i + 1}">+ Zeile darunter</button>
+  </div>`;
+}
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (view.name === 'review' && el.dataset && el.dataset.f) {
+    const row = view.rows[+el.dataset.i];
+    if (el.dataset.f === 'meanings') {
+      const old = row.meanings;
+      const parts = el.value.split(';').map(s => s.trim()).filter(Boolean);
+      row.meanings = parts.map((t, k) => { const o = old.find(m => m.text === t); return { text: t, main: o ? o.main : (k === 0 || (old[k] ? old[k].main : false)) }; });
+      const chips = el.parentElement.querySelector('.chips');
+      chips.innerHTML = row.meanings.map((m, k) => `<span class="chip edit ${m.main ? 'main' : ''}" data-act="toggleMain" data-arg="${el.dataset.i}:${k}">${m.main ? '★ ' : ''}${esc(m.text)}</span>`).join('');
+    } else row[el.dataset.f] = el.value;
+  }
+  if (el.id === 'answer' || el.id === 'bonusInput') { const er = $('#qErr'); if (er) er.textContent = ''; }
+});
+
+// ---------- Abfrage ----------
+VIEWS.quiz = () => {
+  const s = session, w = s.current;
+  if (!w) return '';
+  const done = s.answered, total = s.total;
+  let body = '';
+  if (s.phase === 'ask') {
+    body = `<label class="small muted" for="answer">Deutsche Bedeutung(en) – mehrere mit Komma trennen</label>
+      <input type="text" id="answer" class="big-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" autofocus>
+      <div class="err" id="qErr"></div>
+      <div class="grid2" style="margin-top:8px"><button data-act="skip">Weiß ich nicht</button><button class="primary" data-act="check">Prüfen</button></div>`;
+  } else if (s.phase === 'bonus') {
+    const n = s.res.items.filter(i => !i.hit).length;
+    body = `<div class="feedback ok">✓ Hauptbedeutung richtig · +${s.res.points} Punkte</div>
+      <div class="bonus pop"><b>🏆 Bonus-Runde</b><p class="small">Es gibt noch ${n} weitere Bedeutung${n > 1 ? 'en' : ''}. Jede bringt <b>${VokCore.POINTS.side} Punkte</b> – und nur so wird die Karte zu Gold!</p>
+      <input type="text" id="bonusInput" class="big-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Weitere Bedeutung" autofocus>
+      <div class="err" id="qErr"></div>
+      <div class="grid2" style="margin-top:8px"><button data-act="bonusSkip">Weiß ich nicht</button><button class="gold" data-act="bonusCheck">Prüfen</button></div></div>`;
+  } else if (s.phase === 'feedback') {
+    body = feedbackHTML(s);
+  }
+  return `<div class="top noprint"><button class="ghost small" data-act="quitQuiz">✕ Beenden</button>
+    <span>${done + 1}/${total}</span><span class="pill gold">★ ${s.points}</span>${s.combo >= 3 ? `<span class="pill violet">Serie ${s.combo}</span>` : ''}</div>
+    <div class="bar" style="margin:8px 0 6px"><div style="width:${done / total * 100}%"></div></div>
+    <div class="card"><div class="latin">${esc(w.latin)}</div><div class="forms">${esc(w.forms || '')}</div>${body}</div>`;
+};
+
+function feedbackHTML(s) {
+  const r = s.res, w = s.current;
+  const cls = !r.mainOk ? 'bad' : (r.typos || !r.allMain || (!r.allSide && hasSide(w))) ? 'mid' : 'ok';
+  let msg;
+  if (!r.mainOk) msg = `✗ Leider nicht. Merk dir vor allem die <b>fett</b> markierte Hauptbedeutung.`;
+  else if (r.gold) msg = `🥇 <b>${PRAISE[Math.floor(Math.random() * PRAISE.length)]}</b> Alle Bedeutungen gewusst – Gold-Karte!`;
+  else if (!r.allMain) msg = `✓ Richtig, aber eine <b>fett</b> gedruckte Hauptbedeutung fehlte noch (rot markiert).`;
+  else if (hasSide(w) && !r.allSide) msg = `✓ Hauptbedeutung richtig. Die gestrichelten Zusatzbedeutungen fehlen noch für Gold.`;
+  else msg = `✓ <b>${PRAISE[Math.floor(Math.random() * PRAISE.length)]}</b>`;
+  const chips = r.items.map(it => {
+    const c = it.hit === 2 ? 'hit' : it.hit === 1 ? 'typo' : it.main ? 'miss' : 'side-miss';
+    return `<span class="chip ${it.main ? 'main' : ''} ${c}">${it.hit === 2 ? '✓ ' : it.hit === 1 ? '≈ ' : ''}${esc(it.text)}</span>`;
+  }).join('');
+  return `<div class="feedback ${cls}">${msg}${r.typos ? '<div class="small">≈ = fast richtig, achte auf die Schreibweise.</div>' : ''}
+    ${s.flaggedNow ? '<div class="small"><b>⚑ Diese Vokabel war jetzt 3-mal falsch und ist markiert.</b></div>' : ''}</div>
+    <div class="small muted">Lösung (fett = Hauptbedeutung):</div><div>${chips}</div>
+    ${s.lastAnswer ? `<p class="small muted">Deine Antwort: ${esc(s.lastAnswer)}</p>` : ''}
+    <p class="center"><span class="pill gold pop">+${r.points} Punkte${s.comboBonus ? ' (+' + s.comboBonus + ' Serie)' : ''}</span></p>
+    <button class="primary block" data-act="next" autofocus>Weiter</button>`;
+}
+
+VIEWS.result = () => {
+  const s = session; const log = s.log;
+  const right = log.filter(l => l.mainOk).length, gold = log.filter(l => l.gold).length;
+  const pct = log.length ? Math.round(right / log.length * 100) : 0;
+  return header('Auswertung', 'home') + `
+  <div class="grid2"><div class="stat">Punkte<b class="pop">★ ${s.points}</b></div><div class="stat">Richtig<b>${pct} %</b></div>
+  <div class="stat">Gold-Karten<b>${gold}</b></div><div class="stat">Abgefragt<b>${log.length}</b></div></div>
+  <p class="center" style="margin:14px 0">${pct >= 90 ? '🏆 Hervorragend!' : pct >= 70 ? '👍 Gut gemacht!' : pct >= 50 ? '💪 Dranbleiben – die Wiederholung bringt es.' : '🌱 Morgen wird es besser. Die schwierigen Vokabeln kommen öfter dran.'}</p>
+  <div class="card"><h3>So hast du die Vokabeln gelesen</h3>
+  ${log.map(l => `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
+    <div class="row"><b class="grow" style="font-family:Georgia,serif">${esc(l.latin)}</b>
+    <span class="pill ${!l.mainOk ? 'red' : l.gold ? 'gold' : ''}">${!l.mainOk ? '✗' : l.gold ? 'Gold' : '✓'} +${l.points}</span></div>
+    <div class="small">Deine Antwort: ${esc(l.answer || '–')}</div>
+    <div>${l.items.map(it => `<span class="chip ${it.main ? 'main' : ''} ${it.hit === 2 ? 'hit' : it.hit === 1 ? 'typo' : it.main ? 'miss' : 'side-miss'}" style="font-size:14px;padding:3px 8px">${esc(it.text)}</span>`).join('')}</div>
+    ${l.flagged ? '<div class="small" style="color:var(--red)">⚑ markiert – 3-mal falsch</div>' : ''}</div>`).join('')}</div>
+  <button class="primary block" data-act="go" data-arg="home">Fertig</button>`;
+};
+
+// ---------- Elternbereich ----------
+VIEWS.pin = () => header(S.settings.pin ? 'Elternbereich' : 'PIN festlegen', 'home') + `
+  <div class="card"><p>${S.settings.pin ? 'Bitte PIN eingeben.' : 'Lege eine 4-stellige PIN für den Elternbereich fest.'}</p>
+  <input type="password" id="pin" inputmode="numeric" maxlength="8" class="big-input" autofocus autocomplete="off">
+  ${S.settings.pin ? '' : '<input type="password" id="pin2" inputmode="numeric" maxlength="8" class="big-input" style="margin-top:8px" placeholder="PIN wiederholen" autocomplete="off">'}
+  <div class="err" id="pinErr"></div><button class="primary block" data-act="pinOk" style="margin-top:8px">Weiter</button></div>`;
+
+VIEWS.admin = () => {
+  const tab = view.tab || 'flagged';
+  const tabs = [['flagged', 'Markiert'], ['stats', 'Übersicht'], ['manage', 'Verwalten']];
+  let body = '';
+  if (tab === 'flagged') {
+    const fl = S.words.filter(w => w.flagged).sort((a, b) => (lessonOf(a.lessonId) || {}).name > (lessonOf(b.lessonId) || {}).name ? 1 : -1);
+    body = fl.length ? `<p class="small muted noprint">Vokabeln, die mindestens 3-mal falsch beantwortet wurden. Ideal zum gemeinsamen Üben – schriftlich und mündlich.</p>
+      <div class="print-only"><h2>Übungsliste Latein – ${new Date().toLocaleDateString('de-DE')}</h2></div>
+      <table><tr><th>Lek.</th><th>Latein</th><th>Bedeutung</th><th class="noprint">Fehler</th><th class="noprint"></th></tr>
+      ${fl.map(w => `<tr><td>${esc((lessonOf(w.lessonId) || {}).name)}</td>
+        <td><b style="font-family:Georgia,serif">${esc(w.latin)}</b><div class="small muted">${esc(w.forms)}</div></td>
+        <td>${w.meanings.map(m => m.main ? '<b>' + esc(m.text) + '</b>' : esc(m.text)).join('; ')}
+          ${w.lastWrong && w.lastWrong.length ? `<div class="small muted noprint">Ihre Antworten: ${w.lastWrong.slice(-3).map(a => a ? '„' + esc(a) + '“' : '(wusste sie nicht)').join(', ')}</div>` : ''}</td>
+        <td class="noprint">${w.wrong}×</td>
+        <td class="noprint"><button class="small" data-act="unflag" data-arg="${w.id}">Geübt ✓</button></td></tr>`).join('')}</table>
+      <div class="grid2 noprint" style="margin-top:12px"><button data-act="print">🖨 Drucken</button><button data-act="quizFlagged">▶ Nur diese abfragen</button></div>`
+      : '<div class="card"><p>Keine markierten Vokabeln. 🎉</p></div>';
+  } else if (tab === 'stats') {
+    const days = Object.keys(S.stats.days).sort().slice(-14);
+    body = `<div class="grid2"><div class="stat">Punkte gesamt<b>${S.stats.points}</b></div><div class="stat">Lernserie<b>${streak()} ${streak() === 1 ? 'Tag' : 'Tage'}</b></div>
+      <div class="stat">Vokabeln<b>${S.words.length}</b></div><div class="stat">Gold<b>${S.words.filter(w => w.gold).length}</b></div></div>
+      <h3>Letzte Lerntage</h3><table><tr><th>Tag</th><th>Karten</th><th>Punkte</th></tr>
+      ${days.reverse().map(d => `<tr><td>${d.split('-').reverse().join('.')}</td><td>${S.stats.days[d].cards}</td><td>${S.stats.days[d].points}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Noch nichts gelernt.</td></tr>'}</table>
+      <h3>Je Lektion</h3><table><tr><th>Lektion</th><th>Vok.</th><th>Gold</th><th>Markiert</th><th>Quote</th></tr>
+      ${S.lessons.map(l => { const ws = wordsOf(l.id); const seen = ws.reduce((a, w) => a + (w.seen || 0), 0), ok = ws.reduce((a, w) => a + (w.correct || 0), 0);
+        return `<tr><td>${esc(l.name)}</td><td>${ws.length}</td><td>${ws.filter(w => w.gold).length}</td><td>${ws.filter(w => w.flagged).length}</td><td>${seen ? Math.round(ok / seen * 100) + ' %' : '–'}</td></tr>`; }).join('')}</table>`;
+  } else {
+    body = `<h3>Lektionen</h3>${S.lessons.map(l => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="grow">Lektion ${esc(l.name)} (${wordsOf(l.id).length})</span>
+      <button class="small" data-act="editLesson" data-arg="${l.id}">Bearbeiten</button><button class="small danger" data-act="delLesson" data-arg="${l.id}">Löschen</button></div>`).join('') || '<p class="muted">Keine Lektionen.</p>'}
+      <h3>Tagesziel</h3><div class="row"><input type="number" id="goal" min="5" max="200" value="${S.settings.goal || 20}" style="width:110px"><button class="small" data-act="saveGoal">Speichern</button></div>
+      <h3>Sicherung</h3><p class="small muted">Alle Daten liegen nur auf diesem Gerät. Exportiere regelmäßig eine Sicherung oder übertrage so die Vokabeln aufs iPad.</p>
+      <div class="grid2"><button data-act="export">⬇ Exportieren</button><label class="btn center" style="display:flex;align-items:center;justify-content:center">⬆ Importieren<input type="file" id="importFile" accept=".json,application/json" class="hidden"></label></div>
+      <h3>Weiteres</h3><div class="grid2"><button data-act="changePin">PIN ändern</button><button class="danger" data-act="resetProgress">Lernstand zurücksetzen</button></div>`;
+  }
+  return `<div class="noprint">${header('Elternbereich', 'home')}<div class="tabbar">${tabs.map(t => `<button class="${t[0] === tab ? 'on' : ''}" data-act="adminTab" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div></div>${body}`;
+};
+
+// =========================================================
+//  Aktionen
+// =========================================================
+const ACT = {};
+ACT.go = n => go(n);
+ACT.lesson = id => go('lesson', { id });
+
+// ---------- Foto verarbeiten ----------
+document.addEventListener('change', e => {
+  if (e.target.id === 'photo' && e.target.files[0]) handlePhoto(e.target.files[0]);
+  if (e.target.id === 'importFile' && e.target.files[0]) importJSON(e.target.files[0]);
+});
+
+let tessWorker = null;
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Laden fehlgeschlagen')); document.head.appendChild(s); });
+}
+async function getWorker(progress) {
+  if (tessWorker) return tessWorker;
+  if (!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+  tessWorker = await Tesseract.createWorker('deu', 1, {
+    logger: m => { if (m.status && typeof m.progress === 'number') progress(m.status, m.progress); }
+  });
+  await tessWorker.setParameters({ tessedit_pageseg_mode: '11', preserve_interword_spaces: '1' });
+  return tessWorker;
+}
+
+async function handlePhoto(file) {
+  const name = ($('#lessonName').value || '').trim();
+  const err = $('#impErr');
+  if (!name) { err.textContent = 'Bitte zuerst die Lektion eintragen.'; $('#lessonName').focus(); return; }
+  err.textContent = '';
+  view.lesson = name;
+  const prog = $('#progress'), bar = $('#progBar'), txt = $('#progText');
+  prog.classList.remove('hidden');
+  const setP = (t, p) => { txt.textContent = t; bar.style.width = Math.round(p * 100) + '%'; };
+  try {
+    setP('Bild wird vorbereitet …', .05);
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 2600 / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, w, h);
+    const prev = $('#prev'); prev.src = cv.toDataURL('image/jpeg', .6); prev.classList.remove('hidden');
+    const id = ctx.getImageData(0, 0, w, h), d = id.data;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0, j = 0; j < gray.length; i += 4, j++) gray[j] = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+    setP('Schatten werden entfernt …', .1);
+    await new Promise(r => setTimeout(r, 30));
+    const norm = VokCore.normalizeGray(gray, w, h);
+    for (let i = 0, j = 0; j < norm.length; i += 4, j++) { d[i] = d[i + 1] = d[i + 2] = norm[j]; d[i + 3] = 255; }
+    ctx.putImageData(id, 0, 0);
+    setP('Texterkennung wird geladen …', .15);
+    const worker = await getWorker((st, p) => {
+      if (/recogniz/.test(st)) setP('Text wird erkannt … ' + Math.round(p * 100) + ' %', .3 + p * .65);
+      else setP('Texterkennung wird geladen …', .15 + p * .15);
+    });
+    const { data } = await worker.recognize(cv, {}, { blocks: true });
+    setP('Vokabeln werden zugeordnet …', .97);
+    const words = collectWords(data).map(wd => {
+      const box = { x0: Math.max(0, wd.bbox.x0), y0: Math.max(0, wd.bbox.y0), x1: Math.min(w, wd.bbox.x1), y1: Math.min(h, wd.bbox.y1) };
+      return { text: wd.text, conf: wd.confidence, x0: box.x0, y0: box.y0, x1: box.x1, y1: box.y1, sw: VokCore.strokeWidth(norm, w, box) };
+    });
+    const res = VokCore.parsePage(words, w);
+    if (!res.entries.length) { prog.classList.add('hidden'); err.textContent = res.warnings.join(' ') || 'Keine Vokabeln erkannt.'; return; }
+    go('review', { lesson: name, rows: res.entries, warnings: res.warnings });
+  } catch (ex) {
+    prog.classList.add('hidden');
+    err.textContent = 'Die Erkennung hat nicht geklappt (' + ex.message + '). Beim ersten Mal ist eine Internetverbindung nötig.';
+  }
+}
+function collectWords(data) {
+  if (data.words && data.words.length) return data.words;
+  const out = [];
+  (data.blocks || []).forEach(b => (b.paragraphs || []).forEach(p => (p.lines || []).forEach(l => (l.words || []).forEach(wd => out.push(wd)))));
+  return out;
+}
+
+ACT.manual = () => {
+  const name = ($('#lessonName').value || '').trim();
+  if (!name) { $('#impErr').textContent = 'Bitte zuerst die Lektion eintragen.'; return; }
+  go('review', { lesson: name, rows: [{ latin: '', forms: '', meanings: [] }], warnings: [] });
+};
+ACT.toggleMain = arg => {
+  const [i, k] = arg.split(':').map(Number);
+  const m = view.rows[i].meanings[k]; m.main = !m.main;
+  const el = document.querySelector(`[data-act="toggleMain"][data-arg="${arg}"]`);
+  el.classList.toggle('main', m.main); el.textContent = (m.main ? '★ ' : '') + m.text;
+};
+ACT.delRow = i => { view.rows.splice(+i, 1); render(); };
+ACT.addRow = i => { view.rows.splice(+i, 0, { latin: '', forms: '', meanings: [] }); render(); };
+ACT.saveReview = () => {
+  const rows = view.rows.filter(r => r.latin.trim());
+  const bad = rows.filter(r => !r.meanings.length);
+  if (!rows.length) { $('#revErr').textContent = 'Es ist keine Vokabel eingetragen.'; return; }
+  if (bad.length) { $('#revErr').textContent = 'Bei „' + bad[0].latin + '“ fehlt die Bedeutung.'; return; }
+  rows.forEach(r => { if (!r.meanings.some(m => m.main)) r.meanings[0].main = true; });
+  let l = S.lessons.find(x => x.name === view.lesson);
+  if (!l) { l = { id: uid(), name: view.lesson, created: Date.now() }; S.lessons.push(l); }
+  if (view.editId) {                       // Bearbeiten einer bestehenden Lektion
+    const keep = {};
+    wordsOf(l.id).forEach(w => { keep[w.latin] = w; });
+    S.words = S.words.filter(w => w.lessonId !== l.id);
+    rows.forEach(r => {
+      const o = keep[r.latin.trim()];
+      S.words.push(Object.assign(o || newWord(l.id), { latin: r.latin.trim(), forms: (r.forms || '').trim(), meanings: r.meanings }));
+    });
+  } else {
+    const existing = new Set(wordsOf(l.id).map(w => w.latin));
+    rows.forEach(r => { if (!existing.has(r.latin.trim())) S.words.push(Object.assign(newWord(l.id), { latin: r.latin.trim(), forms: (r.forms || '').trim(), meanings: r.meanings })); });
+  }
+  save(); toast(rows.length + ' Vokabeln gespeichert'); go(view.editId ? 'admin' : 'lesson', { id: l.id, tab: 'manage' });
+};
+function newWord(lessonId) { return { id: uid(), lessonId, latin: '', forms: '', meanings: [], box: 0, due: 0, wrong: 0, wrongTotal: 0, flagged: false, lastWrong: [], seen: 0, correct: 0, gold: false }; }
+
+// ---------- Abfrage starten ----------
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function startQuiz(list, maxN) {
+  if (!list.length) { toast('Gerade ist nichts fällig. Super! Du kannst eine Lektion komplett abfragen.'); return; }
+  list = shuffle(list.slice()).sort((a, b) => (a.box || 0) - (b.box || 0));
+  if (maxN) list = list.slice(0, maxN);
+  session = { queue: shuffle(list), retry: [], total: list.length, answered: 0, points: 0, combo: 0, log: [], current: null };
+  nextCard();
+}
+ACT.startDue = () => startQuiz(S.words.filter(isDue), 20);
+ACT.startLesson = id => startQuiz(wordsOf(id));
+ACT.startLessonDue = id => startQuiz(wordsOf(id).filter(isDue));
+ACT.quizFlagged = () => startQuiz(S.words.filter(w => w.flagged));
+
+function nextCard() {
+  const s = session;
+  if (!s.queue.length && s.retry.length) { s.queue = shuffle(s.retry); s.retry = []; s.total += s.queue.length; }
+  if (!s.queue.length) { save(); if (s.log.some(l => l.gold)) confetti(); go('result'); return; }
+  s.current = s.queue.shift(); s.phase = 'ask'; s.res = null; s.first = null; s.lastAnswer = ''; s.flaggedNow = false; s.comboBonus = 0;
+  go('quiz');
+}
+ACT.check = () => {
+  const a = $('#answer').value.trim();
+  if (!a) { $('#qErr').textContent = 'Gib zuerst eine Bedeutung ein oder tippe auf „Weiß ich nicht“.'; return; }
+  evaluate(a);
+};
+ACT.skip = () => evaluate('');
+function evaluate(answer) {
+  const s = session, w = s.current;
+  s.lastAnswer = answer;
+  const g = VokCore.grade(answer, w.meanings);
+  s.first = g.items.map(i => i.hit);
+  s.res = Object.assign(VokCore.score(g.items), { items: g.items });
+  if (s.res.mainOk && s.res.items.some(i => !i.hit)) { s.phase = 'bonus'; go('quiz'); return; }
+  finish();
+}
+ACT.bonusCheck = () => {
+  const a = $('#bonusInput').value.trim();
+  if (!a) { $('#qErr').textContent = 'Gib eine Bedeutung ein oder tippe auf „Weiß ich nicht“.'; return; }
+  const s = session;
+  s.lastAnswer += ', ' + a;
+  const g = VokCore.grade(a, s.current.meanings, s.first);
+  s.res = Object.assign(VokCore.score(g.items), { items: g.items });
+  finish();
+};
+ACT.bonusSkip = () => finish();
+
+function finish() {
+  const s = session, w = s.current, r = s.res;
+  const firstTry = !s.log.some(l => l.id === w.id);
+  r.gold = r.mainOk && r.allMain && r.allSide && !r.typos;
+  if (r.mainOk) {
+    s.combo++;
+    if (s.combo >= 3) { s.comboBonus = Math.min(10, s.combo); r.points += s.comboBonus; }
+  } else s.combo = 0;
+  if (firstTry) {
+    w.seen = (w.seen || 0) + 1;
+    if (r.mainOk) {
+      w.correct = (w.correct || 0) + 1;
+      const cap = hasSide(w) && !r.allSide ? 3 : 5;   // ohne Zusatzbedeutungen höchstens Fach 3
+      w.box = Math.min(cap, Math.max(w.box || 0, 1) + 1);
+      if (r.gold) w.gold = true;
+      else if (!r.allSide || !r.allMain) w.gold = false;
+    } else {
+      w.box = 1; w.gold = false;
+      w.wrong = (w.wrong || 0) + 1; w.wrongTotal = (w.wrongTotal || 0) + 1;
+      w.lastWrong = (w.lastWrong || []).concat([s.lastAnswer]).slice(-5);
+      if (w.wrong >= 3 && !w.flagged) { w.flagged = true; s.flaggedNow = true; }
+    }
+    w.due = Date.now() + INTERVALS[w.box] * DAY - (INTERVALS[w.box] ? 3 * 3600000 : 0);
+    addDay(r.points); s.points += r.points;
+    s.log.push({ id: w.id, latin: w.latin, answer: s.lastAnswer, items: r.items, mainOk: r.mainOk, gold: r.gold, points: r.points, flagged: s.flaggedNow });
+  } else {
+    // Wiederholung in derselben Runde: halbe Punkte
+    r.points = Math.round(r.points / 2); addDay(r.points); s.points += r.points;
+  }
+  if (!r.mainOk && firstTry) s.retry.push(w);
+  s.answered++;
+  s.phase = 'feedback'; save();
+  go('quiz');
+  if (r.gold) confetti();
+}
+ACT.next = () => nextCard();
+ACT.quitQuiz = () => { if (session && session.log.length) go('result'); else go('home'); };
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || view.name !== 'quiz' || !session) return;
+  e.preventDefault();
+  if (session.phase === 'ask') ACT.check(); else if (session.phase === 'bonus') ACT.bonusCheck(); else ACT.next();
+});
+
+// ---------- Elternbereich ----------
+ACT.admin = () => { if (adminOK) go('admin'); else go('pin'); };
+ACT.pinOk = () => {
+  const p = $('#pin').value.trim(), er = $('#pinErr');
+  if (!S.settings.pin || view.change) {
+    const p2 = $('#pin2') ? $('#pin2').value.trim() : '';
+    if (!/^\d{4,8}$/.test(p)) { er.textContent = 'Die PIN braucht 4 bis 8 Ziffern.'; return; }
+    if (p !== p2) { er.textContent = 'Die beiden PINs stimmen nicht überein.'; return; }
+    S.settings.pin = p; save(); adminOK = true; toast('PIN gespeichert'); go('admin'); return;
+  }
+  if (p === S.settings.pin) { adminOK = true; go('admin'); } else { er.textContent = 'Falsche PIN.'; $('#pin').value = ''; }
+};
+ACT.adminTab = t => go('admin', { tab: t });
+ACT.unflag = id => { const w = S.words.find(x => x.id === id); if (w) { w.flagged = false; w.wrong = 0; w.box = 1; w.due = 0; save(); toast('Markierung aufgehoben'); go('admin', { tab: 'flagged' }); } };
+ACT.print = () => window.print();
+ACT.editLesson = id => { const l = lessonOf(id); go('review', { lesson: l.name, editId: id, warnings: [], rows: wordsOf(id).map(w => ({ latin: w.latin, forms: w.forms, meanings: w.meanings.map(m => Object.assign({}, m)) })) }); };
+ACT.delLesson = id => {
+  const l = lessonOf(id);
+  if (!confirm('Lektion ' + l.name + ' mit allen Vokabeln und dem Lernstand löschen?')) return;
+  S.lessons = S.lessons.filter(x => x.id !== id); S.words = S.words.filter(w => w.lessonId !== id); save(); go('admin', { tab: 'manage' });
+};
+ACT.saveGoal = () => { const v = Math.max(5, Math.min(200, parseInt($('#goal').value, 10) || 20)); S.settings.goal = v; save(); toast('Tagesziel: ' + v + ' Karten'); };
+ACT.changePin = () => { S.settings.pin = ''; save(); go('pin'); };
+ACT.resetProgress = () => {
+  if (!confirm('Punkte, Serie und Lernstand aller Vokabeln zurücksetzen? Die Vokabeln selbst bleiben erhalten.')) return;
+  S.words.forEach(w => Object.assign(w, { box: 0, due: 0, wrong: 0, wrongTotal: 0, flagged: false, lastWrong: [], seen: 0, correct: 0, gold: false }));
+  S.stats = { points: 0, days: {}, best: 0 }; save(); toast('Lernstand zurückgesetzt'); go('admin', { tab: 'manage' });
+};
+ACT.export = () => {
+  const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'latein-vokabeln-' + today() + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+function importJSON(file) {
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const d = JSON.parse(fr.result);
+      if (d.words && d.lessons && d.stats) {                     // vollständige Sicherung
+        if (!confirm('Sicherung einspielen? Der aktuelle Stand auf diesem Gerät wird ersetzt.')) return;
+        const pin = S.settings.pin; S = Object.assign(blank(), d); if (!S.settings.pin) S.settings.pin = pin;
+      } else if (d.lesson && Array.isArray(d.vocab)) {             // einzelne Lektion
+        let l = S.lessons.find(x => x.name === String(d.lesson));
+        if (!l) { l = { id: uid(), name: String(d.lesson), created: Date.now() }; S.lessons.push(l); }
+        const have = new Set(wordsOf(l.id).map(w => w.latin)); let n = 0;
+        d.vocab.forEach(v => { if (v.latin && !have.has(v.latin)) { S.words.push(Object.assign(newWord(l.id), { latin: v.latin, forms: v.forms || '', meanings: v.meanings })); n++; } });
+        toast(n + ' Vokabeln in Lektion ' + l.name + ' importiert');
+      } else throw new Error('Format');
+      save(); go('admin', { tab: 'manage' });
+    } catch (e) { toast('Die Datei konnte nicht gelesen werden.'); }
+  };
+  fr.readAsText(file);
+}
+
+// ---------- Start ----------
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+render();
+</script>
+</body>
+</html>
