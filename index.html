@@ -132,6 +132,11 @@ const lessonOf = id => S.lessons.find(l => l.id === id);
 const wordsOf = id => S.words.filter(w => w.lessonId === id);
 const isDue = w => (w.due || 0) <= Date.now();
 const hasSide = w => w.meanings.some(m => !m.main);
+const lname = w => (lessonOf(w.lessonId) || {}).name || '?';
+const src = w => '(L. ' + esc(lname(w)) + ')';
+const lsort = (a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0) || String(a.name).localeCompare(String(b.name));
+const isStandalone = () => window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 function toast(msg, ms = 2600) {
   const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden');
@@ -198,7 +203,7 @@ const VIEWS = {};
 VIEWS.home = () => {
   const L = level(S.stats.points), ds = dayStat(), goal = S.settings.goal || 20;
   const due = S.words.filter(isDue).length;
-  const lessons = S.lessons.slice().sort((a, b) => (parseFloat(a.name) || 0) - (parseFloat(b.name) || 0) || a.name.localeCompare(b.name));
+  const lessons = S.lessons.slice().sort(lsort);
   const lvPct = L.to ? Math.round((S.stats.points - L.from) / (L.to - L.from) * 100) : 100;
   return header('') + `
   <div class="card">
@@ -208,7 +213,8 @@ VIEWS.home = () => {
     <div class="row" style="margin-top:12px"><div class="grow small">Tagesziel: ${Math.min(ds.cards, goal)} von ${goal} Karten</div>${ds.cards >= goal ? '<span class="pill gold">Geschafft ✓</span>' : ''}</div>
     <div class="bar gold"><div style="width:${Math.min(100, ds.cards / goal * 100)}%"></div></div>
   </div>
-  <button class="primary block" data-act="startDue" ${S.words.length ? '' : 'disabled'}>▶ Lernen${due ? ` – ${due} fällig` : ''}</button>
+  ${isIOS() && !isStandalone() ? `<div class="feedback mid small"><b>Hinweis:</b> Du nutzt die App gerade in Safari. Safari und das Symbol auf dem Home-Bildschirm speichern ihre Vokabeln <b>getrennt</b>. Öffne die App bitte immer über das Symbol auf dem Home-Bildschirm.</div>` : ''}
+  <button class="primary block" data-act="go" data-arg="setup" ${S.words.length ? '' : 'disabled'}>▶ Lernen${due ? ` – ${due} fällig` : ''}</button>
   <h2>Lektionen</h2>
   ${lessons.length ? '' : `<div class="card"><p><b>Noch keine Vokabeln.</b></p><p class="muted">Fotografiere eine Wortschatz-Seite aus dem Cursus. Die App erkennt die Vokabeln, und du prüfst sie einmal kurz.</p></div>`}
   ${lessons.map(l => {
@@ -224,6 +230,35 @@ VIEWS.home = () => {
     <button data-act="admin">🔒 Elternbereich</button>
   </div>`;
 };
+
+VIEWS.setup = () => {
+  if (!view.sel) {
+    const last = (S.settings.lastSel || []).filter(id => lessonOf(id));
+    view.sel = last.length ? last : S.lessons.map(l => l.id);
+    view.mode = S.settings.lastMode || 'due'; view.count = S.settings.lastCount == null ? 20 : S.settings.lastCount;
+  }
+  const ls = S.lessons.slice().sort(lsort);
+  const pool = setupPool();
+  const all = view.sel.length === ls.length;
+  const opt = (k, v, label) => `<button class="${view[k] === v ? 'primary' : ''}" data-act="setOpt" data-arg="${k}:${v}">${label}</button>`;
+  return header('Was möchtest du üben?', 'home') + `
+  <div class="card"><div class="row"><b class="grow">Lektionen</b>
+    <button class="small ${all ? 'primary' : ''}" data-act="selAll">Alle</button></div>
+    <div style="margin-top:8px">${ls.map(l => {
+      const on = view.sel.includes(l.id);
+      return `<span class="chip edit ${on ? 'hit main' : ''}" data-act="selLesson" data-arg="${l.id}">${on ? '✓ ' : ''}L. ${esc(l.name)} <span class="small">(${wordsOf(l.id).length})</span></span>`;
+    }).join('')}</div></div>
+  <div class="card"><b>Welche Vokabeln?</b>
+    <div class="grid2" style="margin-top:8px">${opt('mode', 'due', 'Nur fällige')}${opt('mode', 'all', 'Alle')}${opt('mode', 'weak', 'Noch nicht Gold')}${opt('mode', 'flagged', 'Markierte')}</div>
+    <b style="display:block;margin-top:12px">Wie viele?</b>
+    <div class="grid2" style="margin-top:8px;grid-template-columns:1fr 1fr 1fr 1fr">${opt('count', 10, '10')}${opt('count', 20, '20')}${opt('count', 30, '30')}${opt('count', 0, 'Alle')}</div></div>
+  <button class="primary block" data-act="startSetup">▶ Los geht's – ${view.count ? Math.min(view.count, pool.length) : pool.length} Vokabeln</button>
+  <div class="err" id="setErr"></div>`;
+};
+function setupPool() {
+  return S.words.filter(w => view.sel.includes(w.lessonId)).filter(w =>
+    view.mode === 'due' ? isDue(w) : view.mode === 'weak' ? !w.gold : view.mode === 'flagged' ? w.flagged : true);
+}
 
 VIEWS.lesson = () => {
   const l = lessonOf(view.id); if (!l) return VIEWS.home();
@@ -314,7 +349,7 @@ VIEWS.quiz = () => {
   return `<div class="top noprint"><button class="ghost small" data-act="quitQuiz">✕ Beenden</button>
     <span>${done + 1}/${total}</span><span class="pill gold">★ ${s.points}</span>${s.combo >= 3 ? `<span class="pill violet">Serie ${s.combo}</span>` : ''}</div>
     <div class="bar" style="margin:8px 0 6px"><div style="width:${done / total * 100}%"></div></div>
-    <div class="card"><div class="latin">${esc(w.latin)}</div><div class="forms">${esc(w.forms || '')}</div>${body}</div>`;
+    <div class="card"><div class="center"><span class="pill">Lektion ${esc(lname(w))}</span></div><div class="latin">${esc(w.latin)}</div><div class="forms">${esc(w.forms || '')}</div>${body}</div>`;
 };
 
 function feedbackHTML(s) {
@@ -348,7 +383,7 @@ VIEWS.result = () => {
   <p class="center" style="margin:14px 0">${pct >= 90 ? '🏆 Hervorragend!' : pct >= 70 ? '👍 Gut gemacht!' : pct >= 50 ? '💪 Dranbleiben – die Wiederholung bringt es.' : '🌱 Morgen wird es besser. Die schwierigen Vokabeln kommen öfter dran.'}</p>
   <div class="card"><h3>So hast du die Vokabeln gelesen</h3>
   ${log.map(l => `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
-    <div class="row"><b class="grow" style="font-family:Georgia,serif">${esc(l.latin)}</b>
+    <div class="row"><span class="grow"><b style="font-family:Georgia,serif">${esc(l.latin)}</b> <span class="small muted">(L. ${esc(l.lesson)})</span></span>
     <span class="pill ${!l.mainOk ? 'red' : l.gold ? 'gold' : ''}">${!l.mainOk ? '✗' : l.gold ? 'Gold' : '✓'} +${l.points}</span></div>
     <div class="small">Deine Antwort: ${esc(l.answer || '–')}</div>
     <div>${l.items.map(it => `<span class="chip ${it.main ? 'main' : ''} ${it.hit === 2 ? 'hit' : it.hit === 1 ? 'typo' : it.main ? 'miss' : 'side-miss'}" style="font-size:14px;padding:3px 8px">${esc(it.text)}</span>`).join('')}</div>
@@ -368,13 +403,13 @@ VIEWS.admin = () => {
   const tabs = [['flagged', 'Markiert'], ['stats', 'Übersicht'], ['manage', 'Verwalten']];
   let body = '';
   if (tab === 'flagged') {
-    const fl = S.words.filter(w => w.flagged).sort((a, b) => (lessonOf(a.lessonId) || {}).name > (lessonOf(b.lessonId) || {}).name ? 1 : -1);
+    const fl = S.words.filter(w => w.flagged).sort((a, b) => lsort(lessonOf(a.lessonId) || {}, lessonOf(b.lessonId) || {}) || a.latin.localeCompare(b.latin));
     body = fl.length ? `<p class="small muted noprint">Vokabeln, die mindestens 3-mal falsch beantwortet wurden. Ideal zum gemeinsamen Üben – schriftlich und mündlich.</p>
       <div class="print-only"><h2>Übungsliste Latein – ${new Date().toLocaleDateString('de-DE')}</h2></div>
-      <table><tr><th>Lek.</th><th>Latein</th><th>Bedeutung</th><th class="noprint">Fehler</th><th class="noprint"></th></tr>
-      ${fl.map(w => `<tr><td>${esc((lessonOf(w.lessonId) || {}).name)}</td>
-        <td><b style="font-family:Georgia,serif">${esc(w.latin)}</b><div class="small muted">${esc(w.forms)}</div></td>
-        <td>${w.meanings.map(m => m.main ? '<b>' + esc(m.text) + '</b>' : esc(m.text)).join('; ')}
+      <table><tr><th>Vokabel, Bedeutung (Quelle)</th><th class="noprint">Fehler</th><th class="noprint"></th></tr>
+      ${fl.map(w => `<tr>
+        <td><b style="font-family:Georgia,serif">${esc(w.latin)}</b>, ${w.meanings.map(m => m.main ? '<b>' + esc(m.text) + '</b>' : esc(m.text)).join('; ')} <span class="muted">${src(w)}</span>
+          ${w.forms ? `<div class="small muted">${esc(w.forms)}</div>` : ''}
           ${w.lastWrong && w.lastWrong.length ? `<div class="small muted noprint">Ihre Antworten: ${w.lastWrong.slice(-3).map(a => a ? '„' + esc(a) + '“' : '(wusste sie nicht)').join(', ')}</div>` : ''}</td>
         <td class="noprint">${w.wrong}×</td>
         <td class="noprint"><button class="small" data-act="unflag" data-arg="${w.id}">Geübt ✓</button></td></tr>`).join('')}</table>
@@ -526,6 +561,16 @@ function startQuiz(list, maxN) {
   nextCard();
 }
 ACT.startDue = () => startQuiz(S.words.filter(isDue), 20);
+ACT.selLesson = id => { const i = view.sel.indexOf(id); if (i >= 0) view.sel.splice(i, 1); else view.sel.push(id); render(); };
+ACT.selAll = () => { view.sel = view.sel.length === S.lessons.length ? [] : S.lessons.map(l => l.id); render(); };
+ACT.setOpt = a => { const [k, v] = a.split(':'); view[k] = k === 'count' ? +v : v; render(); };
+ACT.startSetup = () => {
+  if (!view.sel.length) { $('#setErr').textContent = 'Wähle mindestens eine Lektion aus.'; return; }
+  const pool = setupPool();
+  if (!pool.length) { $('#setErr').textContent = view.mode === 'due' ? 'In diesen Lektionen ist gerade nichts fällig. Wähle „Alle“ oder „Noch nicht Gold“.' : 'Dazu gibt es in diesen Lektionen keine Vokabeln.'; return; }
+  S.settings.lastSel = view.sel.slice(); S.settings.lastMode = view.mode; S.settings.lastCount = view.count; save();
+  startQuiz(pool, view.count || 0);
+};
 ACT.startLesson = id => startQuiz(wordsOf(id));
 ACT.startLessonDue = id => startQuiz(wordsOf(id).filter(isDue));
 ACT.quizFlagged = () => startQuiz(S.words.filter(w => w.flagged));
@@ -587,7 +632,7 @@ function finish() {
     }
     w.due = Date.now() + INTERVALS[w.box] * DAY - (INTERVALS[w.box] ? 3 * 3600000 : 0);
     addDay(r.points); s.points += r.points;
-    s.log.push({ id: w.id, latin: w.latin, answer: s.lastAnswer, items: r.items, mainOk: r.mainOk, gold: r.gold, points: r.points, flagged: s.flaggedNow });
+    s.log.push({ id: w.id, latin: w.latin, lesson: lname(w), answer: s.lastAnswer, items: r.items, mainOk: r.mainOk, gold: r.gold, points: r.points, flagged: s.flaggedNow });
   } else {
     // Wiederholung in derselben Runde: halbe Punkte
     r.points = Math.round(r.points / 2); addDay(r.points); s.points += r.points;
